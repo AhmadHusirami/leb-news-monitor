@@ -219,6 +219,9 @@ interface DatePickerFilterProps {
   onRangeChange: (range: DateRange) => void;
   onClear: () => void;
   hasDateFilter: boolean;
+  /** Optional controlled open state */
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }
 
 export function DatePickerFilter({
@@ -228,8 +231,16 @@ export function DatePickerFilter({
   onRangeChange,
   onClear,
   hasDateFilter,
+  open: controlledOpen,
+  onOpenChange,
 }: DatePickerFilterProps) {
-  const [open, setOpen] = useState(false);
+  const [uncontrolledOpen, setUncontrolledOpen] = useState(false);
+  const isControlled = controlledOpen !== undefined;
+  const open = isControlled ? controlledOpen : uncontrolledOpen;
+  const setOpen = (v: boolean) => {
+    if (!isControlled) setUncontrolledOpen(v);
+    onOpenChange?.(v);
+  };
   const [selecting, setSelecting] = useState<"from" | "to">("from");
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -250,6 +261,7 @@ export function DatePickerFilter({
       document.addEventListener("mousedown", handleClick);
       return () => document.removeEventListener("mousedown", handleClick);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 
   const handleDaySelect = useCallback(
@@ -346,7 +358,6 @@ export function DatePickerFilter({
               onClear();
             }}
             className="h-6 w-6 rounded-md flex items-center justify-center text-muted-foreground/50 hover:text-foreground hover:bg-secondary/60 transition-colors cursor-pointer"
-            title="Clear date filter"
           >
             <XIcon />
           </button>

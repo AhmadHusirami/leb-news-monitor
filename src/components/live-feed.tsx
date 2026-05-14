@@ -30,7 +30,7 @@ interface SourceGroup {
 
 export function LiveFeed() {
   const { items: allItems, newIds, sources: sourceCount, fetchedAt, isLoading, isStreaming } = useFeedStream();
-  const { prefs, toggleSource, syncSources } = useFeedPrefs();
+  const { prefs, toggleSource, syncSources, setSourcesVisible } = useFeedPrefs();
   const { layout } = useLayout();
   const {
     filters,
@@ -80,6 +80,8 @@ export function LiveFeed() {
   const [activeCategory, setActiveCategory] = useState<FeedCategory | "all">("all");
   const [activeSource, setActiveSource] = useState<string | null>(null);
   const [visibleCount, setVisibleCount] = useState(ITEMS_PER_PAGE);
+  // Coordinate mutually-exclusive popovers (date picker vs tags) in the search bar
+  const [openPicker, setOpenPicker] = useState<"date" | "tags" | null>(null);
 
   // Group items by source
   const grouped = useMemo(() => {
@@ -197,6 +199,7 @@ export function LiveFeed() {
         sources={allSourceInfo}
         prefs={prefs}
         onToggleSource={toggleSource}
+        onSetSourcesVisible={setSourcesVisible}
       />
 
       <AnnouncementBanner />
@@ -222,6 +225,8 @@ export function LiveFeed() {
                 onRangeChange={setDateRange}
                 onClear={clearDate}
                 hasDateFilter={hasDateFilter}
+                open={openPicker === "date"}
+                onOpenChange={(o) => setOpenPicker(o ? "date" : null)}
               />
             }
             tagBrowser={
@@ -231,6 +236,8 @@ export function LiveFeed() {
                 onToggleTag={toggleTag}
                 onClear={clearTags}
                 hasActiveTags={hasActiveTagFilters}
+                open={openPicker === "tags"}
+                onOpenChange={(o) => setOpenPicker(o ? "tags" : null)}
               />
             }
           />
@@ -256,7 +263,6 @@ export function LiveFeed() {
             <button
               onClick={clearSimilar}
               className="ml-auto shrink-0 p-1 rounded hover:bg-accent/50 text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
-              title="Exit similar mode"
             >
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M18 6 6 18" />

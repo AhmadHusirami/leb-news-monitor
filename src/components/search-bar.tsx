@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, useEffect, useCallback } from "react";
+import { useRef, useState, useEffect, useCallback, useMemo } from "react";
 import type { FeedCategory } from "@/config/feeds";
 import {
   CATEGORY_LABELS,
@@ -9,6 +9,8 @@ import {
 } from "@/config/feeds";
 import type { SearchFilters } from "@/hooks/use-search";
 import type { ReactNode } from "react";
+import { CustomSelect } from "@/components/ui/custom-select";
+import { SingleDatePicker } from "@/components/ui/single-date-picker";
 
 // Icons
 
@@ -117,6 +119,44 @@ export function SearchBar({
       setShowRecent(false);
     },
     [onQueryChange, onCommitSearch]
+  );
+
+  const categoryOptions = useMemo(
+    () => [
+      { value: "all" as const, label: "All Categories" },
+      ...CATEGORY_ORDER.map((cat) => ({
+        value: cat,
+        label: CATEGORY_LABELS[cat],
+        color: CATEGORY_COLORS[cat],
+      })),
+    ],
+    []
+  );
+
+  const sourceOptions = useMemo(
+    () => [
+      { value: "", label: "All Sources" },
+      ...sourceNames.map((name) => ({ value: name, label: name })),
+    ],
+    [sourceNames]
+  );
+
+  const languageOptions = useMemo(
+    () => [
+      { value: "all" as const, label: "All Languages" },
+      { value: "en" as const, label: "English" },
+      { value: "ar" as const, label: "Arabic" },
+    ],
+    []
+  );
+
+  const hasImageOptions = useMemo(
+    () => [
+      { value: "any" as const, label: "Any" },
+      { value: "yes" as const, label: "With image" },
+      { value: "no" as const, label: "Without image" },
+    ],
+    []
   );
 
   const activeFilterCount = [
@@ -237,136 +277,91 @@ export function SearchBar({
 
       {/* Combined filter panel */}
       {showFilters && (
-        <div className="px-3 sm:px-4 pb-2.5 pt-0.5 flex flex-wrap items-end gap-x-4 gap-y-2 border-t border-border/20">
-          {/* Date range */}
-          <div className="flex flex-col gap-0.5">
-            <label className="text-[9px] uppercase tracking-wider text-muted-foreground/50 font-medium">
-              From
-            </label>
-            <input
-              type="date"
-              value={filters.dateFrom}
-              onChange={(e) => onFilterChange("dateFrom", e.target.value)}
-              className="h-7 px-2 rounded border border-border/50 bg-background/80 text-[11px] text-foreground focus:outline-none focus:ring-1 focus:ring-primary/40"
-            />
-          </div>
-          <div className="flex flex-col gap-0.5">
-            <label className="text-[9px] uppercase tracking-wider text-muted-foreground/50 font-medium">
-              To
-            </label>
-            <input
-              type="date"
-              value={filters.dateTo}
-              onChange={(e) => onFilterChange("dateTo", e.target.value)}
-              className="h-7 px-2 rounded border border-border/50 bg-background/80 text-[11px] text-foreground focus:outline-none focus:ring-1 focus:ring-primary/40"
-            />
-          </div>
+        <div className="mt-2 rounded-lg border border-border/40 bg-secondary/20 p-3 sm:p-4">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5">
+            {/* Date From */}
+            <FilterField label="From">
+              <SingleDatePicker
+                value={filters.dateFrom}
+                onChange={(v) => onFilterChange("dateFrom", v)}
+                placeholder="Pick a date"
+                maxIso={filters.dateTo || undefined}
+              />
+            </FilterField>
 
-          {/* Category */}
-          <div className="flex flex-col gap-0.5">
-            <label className="text-[9px] uppercase tracking-wider text-muted-foreground/50 font-medium">
-              Category
-            </label>
-            <select
-              value={filters.category}
-              onChange={(e) =>
-                onFilterChange("category", e.target.value as FeedCategory | "all")
-              }
-              className="h-7 px-2 pr-6 rounded border border-border/50 bg-background/80 text-[11px] text-foreground focus:outline-none focus:ring-1 focus:ring-primary/40 cursor-pointer appearance-none"
-              style={{
-                backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")`,
-                backgroundRepeat: "no-repeat",
-                backgroundPosition: "right 4px center",
-              }}
-            >
-              <option value="all">All</option>
-              {CATEGORY_ORDER.map((cat) => (
-                <option key={cat} value={cat}>
-                  {CATEGORY_LABELS[cat]}
-                </option>
-              ))}
-            </select>
-          </div>
+            {/* Date To */}
+            <FilterField label="To">
+              <SingleDatePicker
+                value={filters.dateTo}
+                onChange={(v) => onFilterChange("dateTo", v)}
+                placeholder="Pick a date"
+                minIso={filters.dateFrom || undefined}
+              />
+            </FilterField>
 
-          {/* Source */}
-          <div className="flex flex-col gap-0.5">
-            <label className="text-[9px] uppercase tracking-wider text-muted-foreground/50 font-medium">
-              Source
-            </label>
-            <select
-              value={filters.source}
-              onChange={(e) => onFilterChange("source", e.target.value)}
-              className="h-7 px-2 pr-6 rounded border border-border/50 bg-background/80 text-[11px] text-foreground focus:outline-none focus:ring-1 focus:ring-primary/40 cursor-pointer appearance-none max-w-[140px]"
-              style={{
-                backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")`,
-                backgroundRepeat: "no-repeat",
-                backgroundPosition: "right 4px center",
-              }}
-            >
-              <option value="">All Sources</option>
-              {sourceNames.map((name) => (
-                <option key={name} value={name}>
-                  {name}
-                </option>
-              ))}
-            </select>
-          </div>
+            {/* Category */}
+            <FilterField label="Category">
+              <CustomSelect<FeedCategory | "all">
+                value={filters.category}
+                onChange={(v) => onFilterChange("category", v)}
+                options={categoryOptions}
+              />
+            </FilterField>
 
-          {/* Language */}
-          <div className="flex flex-col gap-0.5">
-            <label className="text-[9px] uppercase tracking-wider text-muted-foreground/50 font-medium">
-              Language
-            </label>
-            <select
-              value={filters.language}
-              onChange={(e) =>
-                onFilterChange("language", e.target.value as "all" | "en" | "ar")
-              }
-              className="h-7 px-2 pr-6 rounded border border-border/50 bg-background/80 text-[11px] text-foreground focus:outline-none focus:ring-1 focus:ring-primary/40 cursor-pointer appearance-none"
-              style={{
-                backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")`,
-                backgroundRepeat: "no-repeat",
-                backgroundPosition: "right 4px center",
-              }}
-            >
-              <option value="all">All</option>
-              <option value="en">English</option>
-              <option value="ar">Arabic</option>
-            </select>
-          </div>
+            {/* Source */}
+            <FilterField label="Source">
+              <CustomSelect<string>
+                value={filters.source}
+                onChange={(v) => onFilterChange("source", v)}
+                options={sourceOptions}
+                placeholder="All sources"
+              />
+            </FilterField>
 
-          {/* Has image */}
-          <div className="flex flex-col gap-0.5">
-            <label className="text-[9px] uppercase tracking-wider text-muted-foreground/50 font-medium">
-              Has Image
-            </label>
-            <select
-              value={filters.hasImage === null ? "any" : filters.hasImage ? "yes" : "no"}
-              onChange={(e) => {
-                const v = e.target.value;
-                onFilterChange("hasImage", v === "any" ? null : v === "yes");
-              }}
-              className="h-7 px-2 pr-6 rounded border border-border/50 bg-background/80 text-[11px] text-foreground focus:outline-none focus:ring-1 focus:ring-primary/40 cursor-pointer appearance-none"
-              style={{
-                backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")`,
-                backgroundRepeat: "no-repeat",
-                backgroundPosition: "right 4px center",
-              }}
-            >
-              <option value="any">Any</option>
-              <option value="yes">With image</option>
-              <option value="no">Without image</option>
-            </select>
+            {/* Language */}
+            <FilterField label="Language">
+              <CustomSelect<"all" | "en" | "ar">
+                value={filters.language}
+                onChange={(v) => onFilterChange("language", v)}
+                options={languageOptions}
+              />
+            </FilterField>
+
+            {/* Has image */}
+            <FilterField label="Image">
+              <CustomSelect<"any" | "yes" | "no">
+                value={
+                  filters.hasImage === null
+                    ? "any"
+                    : filters.hasImage
+                    ? "yes"
+                    : "no"
+                }
+                onChange={(v) =>
+                  onFilterChange("hasImage", v === "any" ? null : v === "yes")
+                }
+                options={hasImageOptions}
+              />
+            </FilterField>
           </div>
 
           {/* Active filter summary chips */}
           {activeFilterCount > 0 && (
-            <div className="flex items-center gap-1.5 ml-auto self-end">
+            <div className="flex flex-wrap items-center gap-1.5 mt-3 pt-3 border-t border-border/30">
+              <span className="text-[9px] uppercase tracking-wider text-muted-foreground/50 font-medium mr-1">
+                Active
+              </span>
               {filters.dateFrom && (
-                <FilterChip label={`From: ${filters.dateFrom}`} onRemove={() => onFilterChange("dateFrom", "")} />
+                <FilterChip
+                  label={`From: ${filters.dateFrom}`}
+                  onRemove={() => onFilterChange("dateFrom", "")}
+                />
               )}
               {filters.dateTo && (
-                <FilterChip label={`To: ${filters.dateTo}`} onRemove={() => onFilterChange("dateTo", "")} />
+                <FilterChip
+                  label={`To: ${filters.dateTo}`}
+                  onRemove={() => onFilterChange("dateTo", "")}
+                />
               )}
               {filters.category !== "all" && (
                 <FilterChip
@@ -376,7 +371,10 @@ export function SearchBar({
                 />
               )}
               {filters.source && (
-                <FilterChip label={filters.source} onRemove={() => onFilterChange("source", "")} />
+                <FilterChip
+                  label={filters.source}
+                  onRemove={() => onFilterChange("source", "")}
+                />
               )}
               {filters.language !== "all" && (
                 <FilterChip
@@ -394,6 +392,25 @@ export function SearchBar({
           )}
         </div>
       )}
+    </div>
+  );
+}
+
+// Small labeled wrapper for a single filter control inside the panel grid.
+
+function FilterField({
+  label,
+  children,
+}: {
+  label: string;
+  children: ReactNode;
+}) {
+  return (
+    <div className="flex flex-col gap-1">
+      <label className="text-[9px] uppercase tracking-wider text-muted-foreground/60 font-semibold">
+        {label}
+      </label>
+      {children}
     </div>
   );
 }

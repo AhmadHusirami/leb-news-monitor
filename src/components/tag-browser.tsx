@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import type { EntityType, TagInfo } from "@/lib/entity-extractor";
 
 /* ── Icons ────────────────────────────────────────────────────── */
@@ -90,6 +90,9 @@ interface TagBrowserProps {
   onToggleTag: (tag: string) => void;
   onClear: () => void;
   hasActiveTags: boolean;
+  /** Optional controlled open state */
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }
 
 /* ── Component ────────────────────────────────────────────────── */
@@ -99,10 +102,36 @@ export function TagBrowser({
   onToggleTag,
   onClear,
   hasActiveTags,
+  open: controlledOpen,
+  onOpenChange,
 }: TagBrowserProps) {
-  const [isOpen, setIsOpen] = useState(false);
+  const [uncontrolledOpen, setUncontrolledOpen] = useState(false);
+  const isControlled = controlledOpen !== undefined;
+  const isOpen = isControlled ? controlledOpen : uncontrolledOpen;
+  const setIsOpen = (v: boolean) => {
+    if (!isControlled) setUncontrolledOpen(v);
+    onOpenChange?.(v);
+  };
+  const containerRef = useRef<HTMLDivElement>(null);
   const [typeFilter, setTypeFilter] = useState<EntityType | "all">("all");
   const [showAll, setShowAll] = useState(false);
+
+  // Close on outside click
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (
+        containerRef.current &&
+        !containerRef.current.contains(e.target as Node)
+      ) {
+        setIsOpen(false);
+      }
+    }
+    if (isOpen) {
+      document.addEventListener("mousedown", handleClick);
+      return () => document.removeEventListener("mousedown", handleClick);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen]);
 
   const filteredTags = useMemo(() => {
     if (typeFilter === "all") return allTags;
@@ -120,25 +149,25 @@ export function TagBrowser({
   if (allTags.length === 0) return null;
 
   return (
-    <div className="relative">
+    <div className="relative" ref={containerRef}>
       {/* Toggle button */}
       <button
         type="button"
-        onClick={() => setIsOpen((v) => !v)}
-        className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs transition-colors cursor-pointer ${
-          hasActiveTags
-            ? "bg-primary/15 text-primary border border-primary/30"
-            : "text-muted-foreground hover:text-foreground hover:bg-accent/50 border border-transparent"
+        onClick={() => setIsOpen(!isOpen)}
+        className={`shrink-0 h-8 px-2.5 rounded-md border text-xs font-medium flex items-center gap-1.5 transition-colors cursor-pointer ${
+          isOpen || hasActiveTags
+            ? "border-primary/40 bg-primary/10 text-primary"
+            : "border-border/50 bg-background/80 text-muted-foreground hover:text-foreground hover:border-border"
         }`}
       >
         <TagIcon />
         <span>Tags</span>
         {hasActiveTags && (
-          <span className="ml-0.5 px-1 py-px rounded-full text-[9px] font-medium bg-primary/20">
+          <span className="ml-0.5 w-4 h-4 rounded-full bg-primary text-primary-foreground text-[10px] flex items-center justify-center font-semibold">
             {activeTags.size}
           </span>
         )}
-        <ChevronIcon up={isOpen} className="opacity-50" />
+        <ChevronIcon up={isOpen} className="opacity-60" />
       </button>
 
       {/* Dropdown panel */}
@@ -228,7 +257,6 @@ export function TagBrowser({
                     className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-medium border transition-colors cursor-pointer ${
                       isActive ? TYPE_ACTIVE_COLORS[type] : TYPE_COLORS[type]
                     } hover:opacity-80`}
-                    title={`${tag} (${count} article${count !== 1 ? "s" : ""}) — click to toggle`}
                   >
                     <TypeBadgeIcon type={type} />
                     {tag}
