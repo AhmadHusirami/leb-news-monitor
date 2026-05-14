@@ -22,7 +22,8 @@ function saveRecent(list: string[]) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(list.slice(0, MAX_RECENT)));
 }
 
-let recentCache: string[] = [];
+const EMPTY_RECENT: string[] = [];
+let recentCache: string[] = EMPTY_RECENT;
 let recentInit = false;
 let recentListeners: Array<() => void> = [];
 
@@ -34,7 +35,7 @@ function getRecentSnapshot(): string[] {
   return recentCache;
 }
 function getRecentServerSnapshot(): string[] {
-  return [];
+  return EMPTY_RECENT;
 }
 function subscribeRecent(cb: () => void) {
   recentListeners.push(cb);

@@ -172,6 +172,7 @@ export default function RootLayout({
         />
       </head>
       <body
+        suppressHydrationWarning
         className={`${poppins.variable} ${tajawal.variable} antialiased`}
       >
         {children}
