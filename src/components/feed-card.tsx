@@ -145,7 +145,6 @@ export const FeedCard = memo(function FeedCard({
                 onSimilar(item);
               }}
               className="mt-1.5 flex items-center gap-1 text-[11px] sm:text-[10px] text-muted-foreground/50 hover:text-primary transition-colors cursor-pointer"
-              title="Find similar articles"
             >
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <circle cx="11" cy="11" r="8" />

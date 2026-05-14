@@ -36,7 +36,7 @@ export function FeedFilterBar({
   return (
     <div className="shrink-0 border-b border-border/40 bg-secondary/10 pl-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)]">
       {/* Category tabs */}
-      <div className="px-3 sm:px-4 py-1.5 sm:py-2 flex items-center gap-1 overflow-x-auto" role="tablist" aria-label="Filter by category">
+      <div className="px-3 sm:px-4 py-1.5 sm:py-2 flex items-center gap-1 overflow-x-auto" role="tablist">
         <button
           type="button"
           role="tab"

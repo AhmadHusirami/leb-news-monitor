@@ -12,7 +12,6 @@ export function LayoutToggle() {
         <button
           type="button"
           onClick={toggleLayout}
-          aria-label={layout === "grid" ? "Switch to list view" : "Switch to grid view"}
           className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-foreground/5 transition-colors cursor-pointer"
         >
           {layout === "grid" ? (

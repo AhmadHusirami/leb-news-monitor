@@ -27,7 +27,6 @@ export function FontSizeToggle() {
         <button
           type="button"
           onClick={cycleFontSize}
-          aria-label={`Font size: ${fontSize}. Click to cycle.`}
           className="flex items-center gap-1 p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-foreground/5 transition-colors cursor-pointer"
         >
           <ALargeSmall size={14} />

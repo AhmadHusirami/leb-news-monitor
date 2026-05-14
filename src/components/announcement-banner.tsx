@@ -65,7 +65,6 @@ export function AnnouncementBanner() {
         <button
           type="button"
           onClick={dismiss}
-          aria-label="Dismiss announcement"
           className="shrink-0 p-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-foreground/5 transition-colors cursor-pointer"
         >
           <svg
