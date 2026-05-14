@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useCallback } from "react";
+import { useRef, useCallback, useState } from "react";
 import type { FeedItem } from "@/app/api/feeds/route";
 import type { FeedLayout } from "@/hooks/use-layout";
 import type { TagInfo } from "@/lib/entity-extractor";
@@ -39,8 +39,17 @@ export function FeedContent({
 }: FeedContentProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const prevObserverRef = useRef<IntersectionObserver | null>(null);
+  const [showBackToTop, setShowBackToTop] = useState(false);
 
   const hasMore = visibleCount < filteredCount;
+
+  const handleScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
+    setShowBackToTop(e.currentTarget.scrollTop > 400);
+  }, []);
+
+  const scrollToTop = useCallback(() => {
+    scrollRef.current?.scrollTo({ top: 0, behavior: "smooth" });
+  }, []);
 
   const layoutClass = layout === "grid"
     ? "grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-2 sm:gap-3"
@@ -63,7 +72,11 @@ export function FeedContent({
   );
 
   return (
-    <main ref={scrollRef} className="flex-1 overflow-y-auto overscroll-contain">
+    <main
+      ref={scrollRef}
+      onScroll={handleScroll}
+      className="relative flex-1 overflow-y-auto overscroll-contain"
+    >
       <div className="p-2.5 sm:p-4">
         {isLoading && (
           <div key={layout} className={`layout-enter ${layoutClass}`}>
@@ -120,6 +133,29 @@ export function FeedContent({
           </div>
         )}
       </div>
+
+      <button
+        type="button"
+        onClick={scrollToTop}
+        className={`fixed bottom-5 right-5 sm:bottom-6 sm:right-6 z-40 w-10 h-10 sm:w-11 sm:h-11 rounded-full border border-border/50 dark:border-white/70 bg-background/90 backdrop-blur-sm shadow-lg dark:shadow-black/50 flex items-center justify-center text-foreground/80 hover:text-primary hover:border-primary/40 hover:bg-primary/10 transition-all cursor-pointer mb-[env(safe-area-inset-bottom)] ${
+          showBackToTop
+            ? "opacity-100 translate-y-0 pointer-events-auto"
+            : "opacity-0 translate-y-2 pointer-events-none"
+        }`}
+      >
+        <svg
+          width="18"
+          height="18"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <path d="m18 15-6-6-6 6" />
+        </svg>
+      </button>
     </main>
   );
 }
