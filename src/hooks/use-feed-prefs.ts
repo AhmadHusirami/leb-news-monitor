@@ -98,6 +98,28 @@ export function useFeedPrefs() {
     emitChange();
   }, []);
 
+  const setSourcesVisible = useCallback(
+    (sources: string[], visible: boolean) => {
+      if (sources.length === 0) return;
+      const current = loadPrefs();
+      const hidden = new Set(current.hidden);
+      let changed = false;
+      for (const name of sources) {
+        if (visible) {
+          if (hidden.delete(name)) changed = true;
+        } else if (!hidden.has(name)) {
+          hidden.add(name);
+          changed = true;
+        }
+      }
+      if (!changed) return;
+      const next = { order: [...current.order], hidden };
+      savePrefs(next);
+      emitChange();
+    },
+    []
+  );
+
   const syncSources = useCallback((sources: string[]) => {
     const current = loadPrefs();
     const existing = new Set(current.order);
@@ -110,5 +132,5 @@ export function useFeedPrefs() {
     emitChange();
   }, []);
 
-  return { prefs, toggleSource, moveSource, syncSources };
+  return { prefs, toggleSource, moveSource, syncSources, setSourcesVisible };
 }

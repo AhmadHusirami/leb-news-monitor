@@ -23,6 +23,7 @@ interface FeedHeaderProps {
   sources: SourceInfo[];
   prefs: FeedPrefs;
   onToggleSource: (source: string) => void;
+  onSetSourcesVisible: (sources: string[], visible: boolean) => void;
 }
 
 export function FeedHeader({
@@ -34,6 +35,7 @@ export function FeedHeader({
   sources,
   prefs,
   onToggleSource,
+  onSetSourcesVisible,
 }: FeedHeaderProps) {
   return (
     <header className="shrink-0 border-b border-border/50 bg-secondary/20 backdrop-blur-sm pl-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)]">
@@ -95,6 +97,7 @@ export function FeedHeader({
             sources={sources}
             prefs={prefs}
             onToggle={onToggleSource}
+            onSetVisible={onSetSourcesVisible}
           />
         </div>
       </div>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useId } from "react";
+import { useId, useMemo, useState } from "react";
 import {
   Sheet,
   SheetContent,
@@ -30,24 +30,55 @@ export function FeedSettings({
   sources,
   prefs,
   onToggle,
+  onSetVisible,
 }: {
   sources: SourceInfo[];
   prefs: FeedPrefs;
   onToggle: (source: string) => void;
+  onSetVisible: (sources: string[], visible: boolean) => void;
 }) {
-  const byCategory = CATEGORY_ORDER.map((cat) => {
-    const catSources = sources
-      .filter((s) => s.category === cat)
-      .sort((a, b) => {
-        const ai = prefs.order.indexOf(a.name);
-        const bi = prefs.order.indexOf(b.name);
-        if (ai === -1 && bi === -1) return 0;
-        if (ai === -1) return 1;
-        if (bi === -1) return -1;
-        return ai - bi;
-      });
-    return { category: cat, sources: catSources };
-  }).filter((g) => g.sources.length > 0);
+  const [query, setQuery] = useState("");
+  const normalizedQuery = query.trim().toLowerCase();
+
+  const filteredSources = useMemo(
+    () =>
+      normalizedQuery
+        ? sources.filter((s) =>
+            s.name.toLowerCase().includes(normalizedQuery)
+          )
+        : sources,
+    [sources, normalizedQuery]
+  );
+
+  const byCategory = useMemo(
+    () =>
+      CATEGORY_ORDER.map((cat) => {
+        const catSources = filteredSources
+          .filter((s) => s.category === cat)
+          .sort((a, b) => {
+            const ai = prefs.order.indexOf(a.name);
+            const bi = prefs.order.indexOf(b.name);
+            if (ai === -1 && bi === -1) return 0;
+            if (ai === -1) return 1;
+            if (bi === -1) return -1;
+            return ai - bi;
+          });
+        return { category: cat, sources: catSources };
+      }).filter((g) => g.sources.length > 0),
+    [filteredSources, prefs.order]
+  );
+
+  // Names currently visible in the sheet (respect search filter).
+  // Bulk actions operate on these so the user can scope by typing.
+  const scopedNames = useMemo(
+    () => filteredSources.map((s) => s.name),
+    [filteredSources]
+  );
+  const scopedActiveCount = scopedNames.filter(
+    (n) => !prefs.hidden.has(n)
+  ).length;
+  const canEnableAll = scopedNames.length > 0 && scopedActiveCount < scopedNames.length;
+  const canDisableAll = scopedActiveCount > 0;
 
   const hiddenCount = prefs.hidden.size;
   const totalCount = sources.length;
@@ -60,6 +91,7 @@ export function FeedSettings({
         <TooltipTrigger asChild>
           <SheetTrigger asChild>
             <button
+              suppressHydrationWarning
               className="relative flex items-center gap-1.5 px-2.5 py-1.5 sm:px-2 sm:py-1 rounded text-xs sm:text-[10px] uppercase tracking-wider text-muted-foreground hover:text-foreground active:text-foreground hover:bg-accent/50 active:bg-accent/50 transition-colors cursor-pointer"
             >
           <svg
@@ -88,7 +120,11 @@ export function FeedSettings({
         <TooltipContent side="bottom">Manage feeds</TooltipContent>
       </Tooltip>
 
-      <SheetContent className="w-full sm:w-[320px] bg-background border-border/50 p-0" id={sheetId}>
+      <SheetContent
+        className="w-full sm:w-[320px] bg-background border-border/50 p-0"
+        id={sheetId}
+        onOpenAutoFocus={(e) => e.preventDefault()}
+      >
         <SheetHeader className="px-4 py-3 border-b border-border/40">
           <SheetTitle className="text-sm font-semibold uppercase tracking-wide">
             Manage Sources
@@ -100,7 +136,75 @@ export function FeedSettings({
           </SheetDescription>
         </SheetHeader>
 
+        {/* Search + bulk actions */}
+        <div className="px-3 py-2 border-b border-border/40 flex flex-col gap-2">
+          <div className="relative">
+            <svg
+              className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground/50"
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <circle cx="11" cy="11" r="8" />
+              <path d="m21 21-4.3-4.3" />
+            </svg>
+            <input
+              type="text"
+              placeholder="Search sources..."
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              className="w-full h-8 pl-8 pr-8 rounded-md border border-border/50 bg-background/80 text-xs placeholder:text-muted-foreground/40 focus:outline-none focus:ring-1 focus:ring-primary/40 focus:border-primary/40 transition-colors"
+            />
+            {query && (
+              <button
+                type="button"
+                onClick={() => setQuery("")}
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground/40 hover:text-muted-foreground transition-colors cursor-pointer"
+              >
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                  <path d="M18 6 6 18M6 6l12 12" />
+                </svg>
+              </button>
+            )}
+          </div>
+
+          <div className="flex items-center gap-1.5">
+            <button
+              type="button"
+              disabled={!canEnableAll}
+              onClick={() => onSetVisible(scopedNames, true)}
+              className="flex-1 h-7 rounded border border-border/50 bg-background/80 text-[11px] font-medium text-foreground hover:border-primary/40 hover:bg-primary/5 hover:text-primary transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:border-border/50 disabled:hover:bg-background/80 disabled:hover:text-foreground"
+            >
+              Enable all
+            </button>
+            <button
+              type="button"
+              disabled={!canDisableAll}
+              onClick={() => onSetVisible(scopedNames, false)}
+              className="flex-1 h-7 rounded border border-border/50 bg-background/80 text-[11px] font-medium text-foreground hover:border-destructive/40 hover:bg-destructive/5 hover:text-destructive transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:border-border/50 disabled:hover:bg-background/80 disabled:hover:text-foreground"
+            >
+              Disable all
+            </button>
+          </div>
+          {normalizedQuery && (
+            <p className="text-[10px] text-muted-foreground/60">
+              Bulk actions affect the {filteredSources.length} matching source
+              {filteredSources.length !== 1 ? "s" : ""}.
+            </p>
+          )}
+        </div>
+
         <div className="overflow-y-auto flex-1 overscroll-contain pb-[env(safe-area-inset-bottom)]">
+          {byCategory.length === 0 && (
+            <p className="px-4 py-6 text-center text-xs text-muted-foreground/60">
+              No sources match &ldquo;{query}&rdquo;.
+            </p>
+          )}
           {byCategory.map(({ category, sources: catSources }) => {
             const catHidden = catSources.filter((s) =>
               prefs.hidden.has(s.name)
