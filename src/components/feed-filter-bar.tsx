@@ -1,11 +1,13 @@
 "use client";
 
+import { useState } from "react";
 import {
   CATEGORY_LABELS,
   CATEGORY_COLORS,
   CATEGORY_ORDER,
   type FeedCategory,
 } from "@/config/feeds";
+import { useLayout } from "@/hooks/use-layout";
 
 interface SourceChip {
   name: string;
@@ -33,10 +35,27 @@ export function FeedFilterBar({
   onCategoryChange,
   onSourceChange,
 }: FeedFilterBarProps) {
+  const { layout } = useLayout();
+  const [isListFiltersOpen, setIsListFiltersOpen] = useState(false);
+  const isListCollapsed = layout === "list" && !isListFiltersOpen;
+
+  const visibleCategories = isListCollapsed ? CATEGORY_ORDER.slice(0, 3) : CATEGORY_ORDER;
+
+  const filteredSources = sourceChips.filter(
+    (s) => activeCategory === "all" || s.category === activeCategory
+  );
+
+  const visibleSources = isListCollapsed ? filteredSources.slice(0, 6) : filteredSources;
+
   return (
     <div className="shrink-0 border-b border-border/40 bg-secondary/10 pl-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)]">
       {/* Category tabs */}
-      <div className="px-3 sm:px-4 py-1.5 sm:py-2 flex items-center gap-1 overflow-x-auto" role="tablist">
+      <div
+        className={`px-3 sm:px-4 py-1.5 sm:py-2 flex items-center gap-1 ${
+          layout === "list" ? "flex-wrap overflow-visible" : "flex-wrap overflow-visible"
+        }`}
+        role="tablist"
+      >
         <button
           type="button"
           role="tab"
@@ -54,7 +73,7 @@ export function FeedFilterBar({
           </span>
         </button>
 
-        {CATEGORY_ORDER.map((cat) => (
+        {visibleCategories.map((cat) => (
           <button
             type="button"
             role="tab"
@@ -83,13 +102,43 @@ export function FeedFilterBar({
           </button>
         ))}
 
-        <div className="ml-auto hidden sm:block text-[10px] text-muted-foreground/50 tabular-nums shrink-0">
-          {filteredCount} results
+        <div className="ml-auto flex items-center gap-2 shrink-0">
+          {layout === "list" && (
+            <button
+              type="button"
+              onClick={() => setIsListFiltersOpen((prev) => !prev)}
+              className="px-2.5 py-1 rounded-full text-[11px] sm:text-[10px] font-medium tracking-wide text-muted-foreground hover:text-foreground hover:bg-foreground/5 transition-colors cursor-pointer"
+            >
+              <span className="inline-flex items-center gap-1.5">
+                {isListFiltersOpen ? "Show less" : "Show all"}
+                <svg
+                  width="12"
+                  height="12"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className={isListFiltersOpen ? "rotate-180" : ""}
+                >
+                  <path d="m6 9 6 6 6-6" />
+                </svg>
+              </span>
+            </button>
+          )}
+          <div className="hidden sm:block text-[10px] text-muted-foreground/50 tabular-nums">
+            {filteredCount} results
+          </div>
         </div>
       </div>
 
       {/* Source chips */}
-      <div className="px-3 sm:px-4 pb-1.5 sm:pb-2 flex items-center gap-1.5 sm:gap-1.5 overflow-x-auto">
+      <div
+        className={`px-3 sm:px-4 pb-1.5 sm:pb-2 flex items-center gap-1.5 sm:gap-1.5 ${
+          layout === "list" ? "flex-wrap overflow-visible" : "flex-wrap overflow-visible"
+        }`}
+      >
         {activeSource && (
           <button
             type="button"
@@ -103,9 +152,7 @@ export function FeedFilterBar({
           </button>
         )}
 
-        {sourceChips
-          .filter((s) => activeCategory === "all" || s.category === activeCategory)
-          .map((source) => (
+        {visibleSources.map((source) => (
             <button
               type="button"
               aria-pressed={activeSource === source.name}
